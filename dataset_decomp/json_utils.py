@@ -9,10 +9,30 @@ from typing import Any
 
 def parse_json_object(text: str) -> dict[str, Any]:
     cleaned = strip_code_fence(text)
+    candidates = [cleaned]
     try:
-        value = json.loads(cleaned)
-    except json.JSONDecodeError:
-        value = json.loads(extract_balanced_object(cleaned))
+        extracted = extract_balanced_object(cleaned)
+    except ValueError:
+        extracted = None
+    if extracted and extracted != cleaned:
+        candidates.append(extracted)
+
+    last_error: json.JSONDecodeError | None = None
+    for candidate in candidates:
+        for repaired in [candidate, escape_invalid_backslashes(candidate)]:
+            try:
+                value = json.loads(repaired)
+                break
+            except json.JSONDecodeError as exc:
+                last_error = exc
+        else:
+            continue
+        break
+    else:
+        if last_error is None:
+            raise ValueError("No JSON object found in response")
+        raise last_error
+
     if not isinstance(value, dict):
         raise ValueError(f"Expected a JSON object, got {type(value).__name__}")
     return value
@@ -53,3 +73,14 @@ def extract_balanced_object(text: str) -> str:
 
     raise ValueError("Unterminated JSON object in response")
 
+
+def escape_invalid_backslashes(text: str) -> str:
+    r"""Escape LaTeX-style backslashes that break JSON strings.
+
+    LLMs often return JSON-shaped text containing LaTeX snippets such as
+    ``\left`` or ``\frac``. Some commands start with JSON-valid escapes such
+    as ``\right`` or ``\boxed``, so when repair is needed we protect every
+    backslash followed by an ASCII letter.
+    """
+
+    return re.sub(r"\\(?=[A-Za-z])", r"\\\\", text)

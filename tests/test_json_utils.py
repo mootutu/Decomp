@@ -22,6 +22,15 @@ def test_parse_json_object_embedded_in_text() -> None:
     }
 
 
+def test_parse_json_object_repairs_latex_backslashes() -> None:
+    text = r'{"solution": "Use \left(x+1\right) and \frac{1}{2}.", "valid": true}'
+
+    assert parse_json_object(text) == {
+        "solution": r"Use \left(x+1\right) and \frac{1}{2}.",
+        "valid": True,
+    }
+
+
 def test_parse_json_object_rejects_arrays() -> None:
     with pytest.raises(ValueError, match="Expected a JSON object"):
         parse_json_object("[1, 2, 3]")

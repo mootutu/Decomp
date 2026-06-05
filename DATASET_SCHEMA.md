@@ -12,6 +12,9 @@ These files cache the original Hugging Face rows used by the builder.
 ## Flat Nodes
 
 `processed/{dataset}_nodes.jsonl` contains one node per line. It is intentionally flat.
+Use `--processed-subdir NAME` to write an alternate variant, such as
+`processed_depth1/{dataset}_nodes.jsonl`, without replacing the default
+`processed/` artifacts.
 
 Fields:
 
@@ -50,4 +53,14 @@ Full decomposed outputs:
 
 ```bash
 uv run python validate_decomp_dataset.py --require-decomposed --require-verified
+```
+
+Alternate processed directory:
+
+```bash
+uv run python validate_decomp_dataset.py \
+  --processed-subdir processed_depth1 \
+  --require-decomposed \
+  --require-verified \
+  --expected-max-depth 1
 ```

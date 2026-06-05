@@ -69,12 +69,26 @@ Useful flags:
 
 - `--max-problems N`: limit problems per dataset while testing.
 - `--max-depth N`: recursion depth for generated subproblems.
+- `--processed-subdir NAME`: final artifact directory under `data/decomp/`.
 - `--no-verify`: skip verification calls for generated subproblems.
 - `--refresh-raw`: re-fetch AIME source data.
 - `--refresh-llm`: ignore cached LLM responses and regenerate.
 - `--sleep-seconds N`: pause between model calls.
 
 LLM calls are cached in `data/decomp/llm_cache/`, so interrupted builds can be resumed.
+
+## Build a depth-1 variant
+
+To keep the default depth-2 artifacts in `data/decomp/processed/`, write the
+depth-1 variant to a separate processed directory:
+
+```bash
+uv run python build_decomp_dataset.py \
+  --datasets aime24 aime25 \
+  --model gpt-5.5 \
+  --max-depth 1 \
+  --processed-subdir processed_depth1
+```
 
 ## Validate Artifacts
 
@@ -88,6 +102,16 @@ After a full decomposed build:
 
 ```bash
 uv run python validate_decomp_dataset.py --require-decomposed --require-verified
+```
+
+For the depth-1 variant:
+
+```bash
+uv run python validate_decomp_dataset.py \
+  --processed-subdir processed_depth1 \
+  --require-decomposed \
+  --require-verified \
+  --expected-max-depth 1
 ```
 
 That command is the completion check for this repository's dataset-building

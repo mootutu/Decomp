@@ -26,6 +26,7 @@ class BuildConfig:
     datasets: list[str]
     output_dir: Path
     model: str
+    processed_subdir: str = "processed"
     max_depth: int = 2
     max_problems: int | None = None
     refresh_raw: bool = False
@@ -55,7 +56,7 @@ class DecompNode:
 def build_datasets(client: OpenAI | None, config: BuildConfig) -> None:
     config.output_dir.mkdir(parents=True, exist_ok=True)
     raw_dir = config.output_dir / "raw"
-    processed_dir = config.output_dir / "processed"
+    processed_dir = config.output_dir / config.processed_subdir
     processed_dir.mkdir(parents=True, exist_ok=True)
 
     for dataset_key in config.datasets:

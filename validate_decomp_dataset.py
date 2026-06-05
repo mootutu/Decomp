@@ -32,6 +32,11 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Validate AIME decomposition dataset artifacts.")
     parser.add_argument("--data-dir", type=Path, default=Path("data/decomp"))
     parser.add_argument(
+        "--processed-subdir",
+        default="processed",
+        help="Subdirectory under data-dir containing final artifacts.",
+    )
+    parser.add_argument(
         "--datasets",
         nargs="+",
         default=["aime24", "aime25"],
@@ -48,11 +53,27 @@ def main() -> int:
         action="store_true",
         help="Require at least one verification record per dataset.",
     )
+    parser.add_argument(
+        "--expected-max-depth",
+        type=int,
+        default=None,
+        help="Require summary and node depths to match this maximum depth.",
+    )
     args = parser.parse_args()
 
     errors: list[str] = []
     for dataset in args.datasets:
-        errors.extend(validate_dataset(args.data_dir, dataset, args.expected_roots, args.require_decomposed, args.require_verified))
+        errors.extend(
+            validate_dataset(
+                args.data_dir,
+                args.processed_subdir,
+                dataset,
+                args.expected_roots,
+                args.require_decomposed,
+                args.require_verified,
+                args.expected_max_depth,
+            )
+        )
 
     if errors:
         for error in errors:
@@ -65,12 +86,14 @@ def main() -> int:
 
 def validate_dataset(
     data_dir: Path,
+    processed_subdir: str,
     dataset: str,
     expected_roots: int,
     require_decomposed: bool,
     require_verified: bool,
+    expected_max_depth: int | None = None,
 ) -> list[str]:
-    processed_dir = data_dir / "processed"
+    processed_dir = data_dir / processed_subdir
     nodes_path = processed_dir / f"{dataset}_nodes.jsonl"
     trees_path = processed_dir / f"{dataset}_trees.json"
     summary_path = processed_dir / f"{dataset}_summary.json"
@@ -133,6 +156,11 @@ def validate_dataset(
         errors.append(f"{dataset}: summary num_root_problems does not match nodes")
     if summary.get("num_total_nodes") != len(nodes):
         errors.append(f"{dataset}: summary num_total_nodes does not match nodes")
+    actual_max_depth = max((int(node.get("depth", 0)) for node in nodes), default=0)
+    if summary.get("max_depth") != actual_max_depth:
+        errors.append(f"{dataset}: summary max_depth does not match nodes")
+    if expected_max_depth is not None and actual_max_depth != expected_max_depth:
+        errors.append(f"{dataset}: expected max depth {expected_max_depth}, found {actual_max_depth}")
 
     return errors
 

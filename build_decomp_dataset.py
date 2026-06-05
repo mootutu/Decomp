@@ -29,6 +29,11 @@ def main() -> int:
     parser.add_argument("--model", default=os.getenv("AVEMUJICA_MODEL", DEFAULT_MODEL))
     parser.add_argument("--api-key", default=os.getenv("AVEMUJICA_API_KEY"))
     parser.add_argument("--output-dir", type=Path, default=Path("data/decomp"))
+    parser.add_argument(
+        "--processed-subdir",
+        default="processed",
+        help="Subdirectory under output-dir for final artifacts.",
+    )
     parser.add_argument("--max-depth", type=int, default=2)
     parser.add_argument("--max-problems", type=int, default=None)
     parser.add_argument("--refresh-raw", action="store_true")
@@ -50,6 +55,7 @@ def main() -> int:
         datasets=args.datasets,
         output_dir=args.output_dir,
         model=args.model,
+        processed_subdir=args.processed_subdir,
         max_depth=args.max_depth,
         max_problems=args.max_problems,
         refresh_raw=args.refresh_raw,

@@ -11,10 +11,13 @@ import sys
 from openai import APIConnectionError, APIError
 
 from dataset_decomp.avemujica import DEFAULT_MODEL, make_client
+from dataset_decomp.env import load_dotenv
 from dataset_decomp.pipeline import BuildConfig, build_datasets
 
 
 def main() -> int:
+    load_dotenv()
+
     parser = argparse.ArgumentParser(description="Build AIME dataset-decomposition artifacts.")
     parser.add_argument(
         "--datasets",

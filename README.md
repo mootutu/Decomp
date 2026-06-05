@@ -16,8 +16,11 @@ model training, fine-tuning, or evaluation code.
 
 ```bash
 uv sync
-export AVEMUJICA_API_KEY="your_key_here"
+cp .env.example .env
 ```
+
+Edit `.env` and set `AVEMUJICA_API_KEY`. The CLI loads `.env` automatically.
+Environment variables and explicit command-line flags still take precedence.
 
 ## Dry run
 

@@ -9,9 +9,10 @@ import sys
 
 from openai import APIConnectionError, APIError, OpenAI
 
+from dataset_decomp.env import load_dotenv
+
 
 BASE_URL = "https://api.avemujica.moe/v1"
-API_KEY = os.getenv("AVEMUJICA_API_KEY", "")
 USER_AGENT = "curl/8.7.1"
 
 
@@ -47,10 +48,12 @@ def chat(client: OpenAI, model: str, prompt: str, system_prompt: str) -> str:
 
 
 def main() -> int:
+    load_dotenv()
+
     parser = argparse.ArgumentParser(description="Chat with an AveMujicaAPI model.")
     parser.add_argument("prompt", nargs="?", help="User message to send to the model.")
     parser.add_argument("--model", default=os.getenv("AVEMUJICA_MODEL"), help="Model id to use.")
-    parser.add_argument("--api-key", default=API_KEY, help="API key. Defaults to AVEMUJICA_API_KEY.")
+    parser.add_argument("--api-key", default=os.getenv("AVEMUJICA_API_KEY", ""), help="API key. Defaults to AVEMUJICA_API_KEY.")
     parser.add_argument("--list-models", action="store_true", help="Print available model ids and exit.")
     parser.add_argument(
         "--system",

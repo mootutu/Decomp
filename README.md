@@ -34,11 +34,11 @@ Outputs are written under `data/decomp/`:
 
 - `raw/aime24.json`
 - `raw/aime25.json`
-- `processed/aime24_nodes.jsonl`
-- `processed/aime25_nodes.jsonl`
-- `processed/aime24_trees.json`
-- `processed/aime25_trees.json`
-- `processed/*_summary.json`
+- `processed_depth2/aime24_nodes.jsonl`
+- `processed_depth2/aime25_nodes.jsonl`
+- `processed_depth2/aime24_trees.json`
+- `processed_depth2/aime25_trees.json`
+- `processed_depth2/*_summary.json`
 
 See `DATASET_SCHEMA.md` for the exact artifact schema.
 
@@ -62,7 +62,7 @@ uv run python build_decomp_dataset.py \
 ```
 
 The full build should finish with AIME24 and AIME25 artifacts under
-`data/decomp/processed/`. Because every LLM response is cached, rerunning the
+`data/decomp/processed_depth2/`. Because every LLM response is cached, rerunning the
 same command resumes from cached calls instead of regenerating completed steps.
 
 Useful flags:
@@ -79,7 +79,7 @@ LLM calls are cached in `data/decomp/llm_cache/`, so interrupted builds can be r
 
 ## Build a depth-1 variant
 
-To keep the default depth-2 artifacts in `data/decomp/processed/`, write the
+To keep the default depth-2 artifacts in `data/decomp/processed_depth2/`, write the
 depth-1 variant to a separate processed directory:
 
 ```bash

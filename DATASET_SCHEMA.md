@@ -11,10 +11,10 @@ These files cache the original Hugging Face rows used by the builder.
 
 ## Flat Nodes
 
-`processed/{dataset}_nodes.jsonl` contains one node per line. It is intentionally flat.
+`processed_depth2/{dataset}_nodes.jsonl` contains one node per line. It is intentionally flat.
 Use `--processed-subdir NAME` to write an alternate variant, such as
 `processed_depth1/{dataset}_nodes.jsonl`, without replacing the default
-`processed/` artifacts.
+`processed_depth2/` artifacts.
 
 Fields:
 
@@ -35,11 +35,11 @@ Fields:
 
 ## Trees
 
-`processed/{dataset}_trees.json` contains recursive root trees. Each tree uses the same node fields as JSONL and additionally includes nested `children`.
+`processed_depth2/{dataset}_trees.json` contains recursive root trees. Each tree uses the same node fields as JSONL and additionally includes nested `children`.
 
 ## Summary
 
-`processed/{dataset}_summary.json` contains counts and the union of concept tags.
+`processed_depth2/{dataset}_summary.json` contains counts and the union of concept tags.
 
 ## Validation
 

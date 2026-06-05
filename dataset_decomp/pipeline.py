@@ -26,7 +26,7 @@ class BuildConfig:
     datasets: list[str]
     output_dir: Path
     model: str
-    processed_subdir: str = "processed"
+    processed_subdir: str = "processed_depth2"
     max_depth: int = 2
     max_problems: int | None = None
     refresh_raw: bool = False

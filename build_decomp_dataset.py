@@ -31,7 +31,7 @@ def main() -> int:
     parser.add_argument("--output-dir", type=Path, default=Path("data/decomp"))
     parser.add_argument(
         "--processed-subdir",
-        default="processed",
+        default="processed_depth2",
         help="Subdirectory under output-dir for final artifacts.",
     )
     parser.add_argument("--max-depth", type=int, default=2)

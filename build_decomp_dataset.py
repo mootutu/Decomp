@@ -28,7 +28,7 @@ def main() -> int:
     )
     parser.add_argument("--model", default=os.getenv("AVEMUJICA_MODEL", DEFAULT_MODEL))
     parser.add_argument("--api-key", default=os.getenv("AVEMUJICA_API_KEY"))
-    parser.add_argument("--output-dir", type=Path, default=Path("data/decomp"))
+    parser.add_argument("--output-dir", type=Path, default=Path("data"))
     parser.add_argument(
         "--processed-subdir",
         default="processed_depth2",
@@ -39,12 +39,32 @@ def main() -> int:
     parser.add_argument("--refresh-raw", action="store_true")
     parser.add_argument("--refresh-llm", action="store_true")
     parser.add_argument("--no-verify", action="store_true", help="Skip LLM verification of generated subproblems.")
+    parser.add_argument(
+        "--verify-retries",
+        type=int,
+        default=3,
+        help="Regenerate and re-verify a generated subproblem this many times after verification fails.",
+    )
+    parser.add_argument("--difficulty-structural-weight", type=float, default=1.0)
+    parser.add_argument("--difficulty-concept-weight", type=float, default=1.0)
+    parser.add_argument(
+        "--max-workers",
+        type=int,
+        default=1,
+        help="Number of source problems to process concurrently. Defaults to serial execution.",
+    )
     parser.add_argument("--sleep-seconds", type=float, default=0.0)
     parser.add_argument("--dry-run", action="store_true", help="Fetch raw data and write root-only artifacts.")
     args = parser.parse_args()
 
     if args.max_depth < 0:
         print("--max-depth must be >= 0", file=sys.stderr)
+        return 2
+    if args.verify_retries < 0:
+        print("--verify-retries must be >= 0", file=sys.stderr)
+        return 2
+    if args.max_workers < 1:
+        print("--max-workers must be >= 1", file=sys.stderr)
         return 2
     if not args.dry_run and not args.api_key:
         print("Missing API key. Set AVEMUJICA_API_KEY or pass --api-key.", file=sys.stderr)
@@ -61,6 +81,10 @@ def main() -> int:
         refresh_raw=args.refresh_raw,
         refresh_llm=args.refresh_llm,
         verify_subproblems=not args.no_verify,
+        verify_retries=args.verify_retries,
+        difficulty_structural_weight=args.difficulty_structural_weight,
+        difficulty_concept_weight=args.difficulty_concept_weight,
+        max_workers=args.max_workers,
         sleep_seconds=args.sleep_seconds,
         dry_run=args.dry_run,
     )

@@ -19,7 +19,7 @@ def parse_json_object(text: str) -> dict[str, Any]:
 
     last_error: json.JSONDecodeError | None = None
     for candidate in candidates:
-        for repaired in [candidate, escape_invalid_backslashes(candidate)]:
+        for repaired in [escape_invalid_backslashes(candidate), candidate]:
             try:
                 value = json.loads(repaired)
                 break
@@ -78,9 +78,9 @@ def escape_invalid_backslashes(text: str) -> str:
     r"""Escape LaTeX-style backslashes that break JSON strings.
 
     LLMs often return JSON-shaped text containing LaTeX snippets such as
-    ``\left`` or ``\frac``. Some commands start with JSON-valid escapes such
-    as ``\right`` or ``\boxed``, so when repair is needed we protect every
-    backslash followed by an ASCII letter.
+    ``\left`` or ``\{``. JSON only allows a small set of escapes, so when
+    repair is needed we protect every backslash that is not already starting
+    a valid JSON escape.
     """
 
-    return re.sub(r"\\(?=[A-Za-z])", r"\\\\", text)
+    return re.sub(r'\\(?!["\\/u])', r"\\\\", text)

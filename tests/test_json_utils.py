@@ -31,6 +31,15 @@ def test_parse_json_object_repairs_latex_backslashes() -> None:
     }
 
 
+def test_parse_json_object_repairs_non_letter_latex_backslashes() -> None:
+    text = r'{"solution": "Use set notation \{1,2,3\} and norm \|x\|.", "valid": true}'
+
+    assert parse_json_object(text) == {
+        "solution": r"Use set notation \{1,2,3\} and norm \|x\|.",
+        "valid": True,
+    }
+
+
 def test_parse_json_object_rejects_arrays() -> None:
     with pytest.raises(ValueError, match="Expected a JSON object"):
         parse_json_object("[1, 2, 3]")

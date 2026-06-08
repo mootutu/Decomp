@@ -30,7 +30,7 @@ REQUIRED_NODE_FIELDS = {
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Validate AIME decomposition dataset artifacts.")
-    parser.add_argument("--data-dir", type=Path, default=Path("data/decomp"))
+    parser.add_argument("--data-dir", type=Path, default=Path("data"))
     parser.add_argument(
         "--processed-subdir",
         default="processed_depth2",
@@ -93,7 +93,7 @@ def validate_dataset(
     require_verified: bool,
     expected_max_depth: int | None = None,
 ) -> list[str]:
-    processed_dir = data_dir / processed_subdir
+    processed_dir = dataset_processed_dir(data_dir, processed_subdir, dataset)
     nodes_path = processed_dir / f"{dataset}_nodes.jsonl"
     trees_path = processed_dir / f"{dataset}_trees.json"
     summary_path = processed_dir / f"{dataset}_summary.json"
@@ -125,6 +125,7 @@ def validate_dataset(
     node_ids: set[str] = set()
     child_ids: set[str] = set()
     verified_count = 0
+    generated_count = 0
     for idx, node in enumerate(nodes, start=1):
         missing = REQUIRED_NODE_FIELDS - set(node)
         if missing:
@@ -141,16 +142,23 @@ def validate_dataset(
             errors.append(f"{dataset}: node line {idx} should be flat and must not contain nested children")
         node_ids.add(str(node.get("node_id")))
         child_ids.update(str(child_id) for child_id in node.get("child_node_ids", []))
+        if node.get("parent_node_id") is not None:
+            generated_count += 1
         if node.get("verification") is not None:
             verified_count += 1
+            if node["verification"].get("valid") is not True:
+                errors.append(f"{dataset}: node line {idx} has invalid verification")
 
     missing_children = sorted(child_ids - node_ids)
     if missing_children:
         errors.append(f"{dataset}: child ids missing from flat nodes: {missing_children[:5]}")
     if require_decomposed and len(nodes) <= len(root_nodes):
         errors.append(f"{dataset}: expected generated subproblem nodes, found only roots")
-    if require_verified and verified_count == 0:
-        errors.append(f"{dataset}: expected verification records, found none")
+    if require_verified and verified_count != generated_count:
+        errors.append(
+            f"{dataset}: expected every generated node to have verification, "
+            f"found {verified_count}/{generated_count}"
+        )
 
     if summary.get("num_root_problems") != len(root_nodes):
         errors.append(f"{dataset}: summary num_root_problems does not match nodes")
@@ -163,6 +171,16 @@ def validate_dataset(
         errors.append(f"{dataset}: expected max depth {expected_max_depth}, found {actual_max_depth}")
 
     return errors
+
+
+def dataset_processed_dir(data_dir: Path, processed_subdir: str, dataset: str) -> Path:
+    new_layout = data_dir / dataset / processed_subdir
+    if new_layout.exists():
+        return new_layout
+    flat_layout = data_dir / processed_subdir
+    if flat_layout.exists():
+        return flat_layout
+    return data_dir / "decomp" / processed_subdir
 
 
 def read_json(path: Path) -> Any:

@@ -102,7 +102,7 @@ def test_validate_dataset_accepts_custom_processed_subdir(tmp_path: Path) -> Non
         "problem": "Subproblem",
         "parent_node_id": "root",
         "child_node_ids": [],
-        "verification": {"is_correct": True},
+        "verification": {"valid": True},
     }
     write_jsonl(processed / "aime24_nodes.jsonl", [root, child])
     write_json(processed / "aime24_trees.json", [root | {"children": [child | {"children": []}]}])
@@ -119,6 +119,133 @@ def test_validate_dataset_accepts_custom_processed_subdir(tmp_path: Path) -> Non
     )
 
     assert validate_dataset(tmp_path, "processed_depth1", "aime24", 1, True, True, 1) == []
+
+
+def test_validate_dataset_accepts_per_dataset_layout(tmp_path: Path) -> None:
+    processed = tmp_path / "aime24" / "processed_depth1"
+    processed.mkdir(parents=True)
+    node = {
+        "node_id": "root",
+        "dataset": "aime24",
+        "problem_id": "p1",
+        "depth": 0,
+        "problem": "Problem",
+        "answer": "4",
+        "solution": None,
+        "parent_node_id": None,
+        "concept_tags": [],
+        "summary": "Root",
+        "depends_on": [],
+        "verification": None,
+        "child_node_ids": [],
+        "difficulty": {},
+    }
+    write_jsonl(processed / "aime24_nodes.jsonl", [node])
+    write_json(processed / "aime24_trees.json", [node | {"children": []}])
+    write_json(
+        processed / "aime24_summary.json",
+        {
+            "dataset": "aime24",
+            "num_root_problems": 1,
+            "num_total_nodes": 1,
+            "max_depth": 0,
+            "num_verified_nodes": 0,
+            "concept_tags": [],
+        },
+    )
+
+    assert validate_dataset(tmp_path, "processed_depth1", "aime24", 1, False, False, 0) == []
+
+
+def test_validate_dataset_rejects_invalid_verification(tmp_path: Path) -> None:
+    processed = tmp_path / "processed"
+    processed.mkdir()
+    root = {
+        "node_id": "root",
+        "dataset": "aime24",
+        "problem_id": "p1",
+        "depth": 0,
+        "problem": "Problem",
+        "answer": "4",
+        "solution": None,
+        "parent_node_id": None,
+        "concept_tags": [],
+        "summary": "Root",
+        "depends_on": [],
+        "verification": None,
+        "child_node_ids": ["child"],
+        "difficulty": {},
+    }
+    child = root | {
+        "node_id": "child",
+        "depth": 1,
+        "problem": "Subproblem",
+        "parent_node_id": "root",
+        "child_node_ids": [],
+        "verification": {"valid": False, "reason": "wrong answer"},
+    }
+    write_jsonl(processed / "aime24_nodes.jsonl", [root, child])
+    write_json(processed / "aime24_trees.json", [root | {"children": [child | {"children": []}]}])
+    write_json(
+        processed / "aime24_summary.json",
+        {
+            "dataset": "aime24",
+            "num_root_problems": 1,
+            "num_total_nodes": 2,
+            "max_depth": 1,
+            "num_verified_nodes": 1,
+            "concept_tags": [],
+        },
+    )
+
+    errors = validate_dataset(tmp_path, "processed", "aime24", 1, True, True, 1)
+
+    assert any("has invalid verification" in error for error in errors)
+
+
+def test_validate_dataset_requires_all_generated_nodes_verified(tmp_path: Path) -> None:
+    processed = tmp_path / "processed"
+    processed.mkdir()
+    root = {
+        "node_id": "root",
+        "dataset": "aime24",
+        "problem_id": "p1",
+        "depth": 0,
+        "problem": "Problem",
+        "answer": "4",
+        "solution": None,
+        "parent_node_id": None,
+        "concept_tags": [],
+        "summary": "Root",
+        "depends_on": [],
+        "verification": None,
+        "child_node_ids": ["child"],
+        "difficulty": {},
+    }
+    child = root | {
+        "node_id": "child",
+        "depth": 1,
+        "problem": "Subproblem",
+        "parent_node_id": "root",
+        "child_node_ids": [],
+    }
+    write_jsonl(processed / "aime24_nodes.jsonl", [root, child])
+    write_json(processed / "aime24_trees.json", [root | {"children": [child | {"children": []}]}])
+    write_json(
+        processed / "aime24_summary.json",
+        {
+            "dataset": "aime24",
+            "num_root_problems": 1,
+            "num_total_nodes": 2,
+            "max_depth": 1,
+            "num_verified_nodes": 0,
+            "concept_tags": [],
+        },
+    )
+
+    errors = validate_dataset(tmp_path, "processed", "aime24", 1, True, True, 1)
+
+    assert any("expected every generated node to have verification" in error for error in errors)
 
 
 def write_json(path: Path, value: object) -> None:

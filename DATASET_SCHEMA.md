@@ -1,20 +1,20 @@
 # Dataset Schema
 
-The builder writes artifacts under `data/decomp/`.
+The builder writes artifacts under per-dataset directories in `data/`.
 
 ## Raw Files
 
-- `raw/aime24.json`
-- `raw/aime25.json`
+- `data/aime24/raw/aime24.json`
+- `data/aime25/raw/aime25.json`
 
 These files cache the original Hugging Face rows used by the builder.
 
 ## Flat Nodes
 
-`processed_depth2/{dataset}_nodes.jsonl` contains one node per line. It is intentionally flat.
+`data/{dataset}/processed_depth2/{dataset}_nodes.jsonl` contains one node per line. It is intentionally flat.
 Use `--processed-subdir NAME` to write an alternate variant, such as
-`processed_depth1/{dataset}_nodes.jsonl`, without replacing the default
-`processed_depth2/` artifacts.
+`data/{dataset}/processed_depth1/{dataset}_nodes.jsonl`, without replacing the default
+`data/{dataset}/processed_depth2/` artifacts.
 
 Fields:
 
@@ -29,17 +29,36 @@ Fields:
 - `concept_tags`: concept labels for the node.
 - `summary`: decomposition or step summary.
 - `depends_on`: sibling step ids the node depends on.
-- `verification`: LLM verification object for generated subproblems, or `null`.
+- `verification`: independent-solve verification object for generated subproblems, or `null`.
 - `child_node_ids`: direct children in the decomposition tree.
-- `difficulty`: simple structural difficulty features.
+- `difficulty`: concept-graph difficulty features:
+  - `score`: `alpha_structural * structural_complexity + alpha_concept * conceptual_depth`.
+  - `structural_complexity`: number of direct child subproblems.
+  - `conceptual_depth`: maximum depth of the node's canonical concept tags in the concept dependency graph.
+  - `alpha_structural` and `alpha_concept`: weights used to compute `score`.
+  - `concept_tag_depths`: canonical concept tags mapped to graph depths.
 
 ## Trees
 
-`processed_depth2/{dataset}_trees.json` contains recursive root trees. Each tree uses the same node fields as JSONL and additionally includes nested `children`.
+`data/{dataset}/processed_depth2/{dataset}_trees.json` contains recursive root trees. Each tree uses the same node fields as JSONL and additionally includes nested `children`.
 
 ## Summary
 
-`processed_depth2/{dataset}_summary.json` contains counts and the union of concept tags.
+`data/{dataset}/processed_depth2/{dataset}_summary.json` contains counts, the union of concept tags,
+and `concept_graph` metadata with canonical tag depths.
+
+## Repair Existing Artifacts
+
+To remove historical invalid verification records and recompute concept-graph
+difficulty without overwriting the existing processed directory:
+
+```bash
+uv run python repair_decomp_dataset.py \
+  --processed-subdir processed_depth2 \
+  --output-subdir processed_depth2_repaired
+```
+
+Omit `--output-subdir` to overwrite the selected processed directory.
 
 ## Validation
 

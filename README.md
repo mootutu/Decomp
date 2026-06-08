@@ -9,7 +9,7 @@ model training, fine-tuning, or evaluation code.
 - load AIME 2024 and AIME 2025 source problems;
 - use AveMujicaAPI through the OpenAI-compatible SDK;
 - use `gpt-5.5` by default;
-- generate recursive simpler subproblems, concept tags, dependency hints, solutions, and verification records;
+- generate recursive simpler subproblems, concept tags, dependency hints, solutions, and independent-solve verification records;
 - write JSON/JSONL artifacts for later analysis or downstream training in a separate project.
 
 ## Setup
@@ -30,15 +30,15 @@ Fetch raw AIME data and write root-only outputs without calling the model:
 uv run python build_decomp_dataset.py --dry-run
 ```
 
-Outputs are written under `data/decomp/`:
+Outputs are written under per-dataset directories in `data/`:
 
-- `raw/aime24.json`
-- `raw/aime25.json`
-- `processed_depth2/aime24_nodes.jsonl`
-- `processed_depth2/aime25_nodes.jsonl`
-- `processed_depth2/aime24_trees.json`
-- `processed_depth2/aime25_trees.json`
-- `processed_depth2/*_summary.json`
+- `data/aime24/raw/aime24.json`
+- `data/aime25/raw/aime25.json`
+- `data/aime24/processed_depth2/aime24_nodes.jsonl`
+- `data/aime25/processed_depth2/aime25_nodes.jsonl`
+- `data/aime24/processed_depth2/aime24_trees.json`
+- `data/aime25/processed_depth2/aime25_trees.json`
+- `data/<dataset>/processed_depth2/*_summary.json`
 
 See `DATASET_SCHEMA.md` for the exact artifact schema.
 
@@ -62,24 +62,45 @@ uv run python build_decomp_dataset.py \
 ```
 
 The full build should finish with AIME24 and AIME25 artifacts under
-`data/decomp/processed_depth2/`. Because every LLM response is cached, rerunning the
-same command resumes from cached calls instead of regenerating completed steps.
+`data/aime24/processed_depth2/` and `data/aime25/processed_depth2/`. Because every
+LLM response is cached, rerunning the same command resumes from cached calls
+instead of regenerating completed steps.
 
 Useful flags:
 
 - `--max-problems N`: limit problems per dataset while testing.
 - `--max-depth N`: recursion depth for generated subproblems.
-- `--processed-subdir NAME`: final artifact directory under `data/decomp/`.
+- `--processed-subdir NAME`: final artifact directory under each `data/<dataset>/`.
 - `--no-verify`: skip verification calls for generated subproblems.
+- `--verify-retries N`: regenerate and independently re-verify failed subproblems, default `3`.
+- `--difficulty-structural-weight N`: weight for direct child count in difficulty scoring.
+- `--difficulty-concept-weight N`: weight for concept graph depth in difficulty scoring.
+- `--max-workers N`: process source problems concurrently, default `1`.
 - `--refresh-raw`: re-fetch AIME source data.
 - `--refresh-llm`: ignore cached LLM responses and regenerate.
 - `--sleep-seconds N`: pause between model calls.
 
-LLM calls are cached in `data/decomp/llm_cache/`, so interrupted builds can be resumed.
+LLM calls are cached in `data/<dataset>/llm_cache/`, so interrupted builds can be resumed.
+The builder shows a per-dataset progress bar. With `--max-workers N`, completed
+problems are still written in source order.
+
+## Repair existing artifacts
+
+If older artifacts contain failed verification records, repair them into a new
+processed directory:
+
+```bash
+uv run python repair_decomp_dataset.py \
+  --processed-subdir processed_depth2 \
+  --output-subdir processed_depth2_repaired
+```
+
+The repair command removes invalid generated nodes and their descendants, updates
+tree links, and recomputes concept-graph difficulty scores.
 
 ## Build a depth-1 variant
 
-To keep the default depth-2 artifacts in `data/decomp/processed_depth2/`, write the
+To keep the default depth-2 artifacts in each `data/<dataset>/processed_depth2/`, write the
 depth-1 variant to a separate processed directory:
 
 ```bash

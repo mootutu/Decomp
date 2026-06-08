@@ -55,22 +55,57 @@ Return this JSON object exactly:
 Set "is_atomic" to true and use an empty steps list if no meaningful simpler subproblems are needed."""
 
 
-VERIFY_PROMPT = """Verify this generated math subproblem.
+SOLVE_SUBPROBLEM_PROMPT = """Solve this generated math subproblem independently.
 
 Subproblem:
 {problem}
 
-Proposed answer:
-{answer}
-
-Proposed solution:
-{solution}
-
 Return this JSON object:
 {{
-  "valid": true,
-  "corrected_answer": "answer if correction is needed, otherwise same as proposed",
-  "corrected_solution": "solution if correction is needed, otherwise same as proposed",
-  "reason": "brief verification rationale"
+  "solution": "concise step-by-step solution",
+  "final_answer": "numeric or short symbolic answer"
 }}"""
 
+
+REGENERATE_SUBPROBLEM_PROMPT = """Regenerate one failed generated math subproblem.
+
+Parent problem:
+{parent_problem}
+
+Parent final answer:
+{parent_answer}
+
+Parent solution:
+{parent_solution}
+
+Target decomposition step:
+{step_description}
+
+Target concept tags:
+{concept_tags}
+
+Previous invalid subproblem:
+{invalid_problem}
+
+Previous proposed answer:
+{invalid_answer}
+
+Previous proposed solution:
+{invalid_solution}
+
+Verification failure reason:
+{failure_reason}
+
+Create a replacement subproblem for the same target step. It must be self-contained,
+easier than the parent problem, and have a unique numeric or short symbolic answer.
+
+Return this JSON object exactly:
+{{
+  "step_id": "{step_id}",
+  "description": "what this step proves or computes",
+  "concept_tags": ["tag"],
+  "subproblem": "self-contained easier math problem",
+  "expected_answer": "numeric or short symbolic answer",
+  "solution": "short solution to the subproblem",
+  "depends_on": []
+}}"""
